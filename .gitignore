@@ -1,0 +1,29 @@
+# Environment variables
+.env
+
+# Uploaded files
+uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# VS Code settings
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Flask session
+flask_session/
+
+# Logs
+*.log
