@@ -2,19 +2,16 @@ async function analyze() {
     const file = document.getElementById("resumeFile").files[0];
     const job = document.getElementById("job").value.trim();
 
-    // Validation
     if (!file || !job) {
         alert("Resume file aur Job Description dono required hain.");
         return;
     }
 
-    // UI elements
     const btn = document.getElementById("analyzeBtn");
     const loader = document.getElementById("loader");
     const resultBox = document.getElementById("result-box");
     const errorBox = document.getElementById("error-box");
 
-    // Loading state
     btn.disabled = true;
     btn.innerText = "Analyzing...";
     loader.style.display = "block";
@@ -33,31 +30,27 @@ async function analyze() {
 
         const data = await response.json();
 
-        // Backend error
         if (data.error) {
             throw new Error(data.error);
         }
 
         const result = data.result;
 
-        // Score
         const score = result.match_score;
         const scoreEl = document.getElementById("score-value");
         scoreEl.innerText = score + "%";
 
         // Color code score
         if (score >= 70) {
-            scoreEl.style.color = "#10b981"; // green
+            scoreEl.style.color = "#10b981"; 
         } else if (score >= 40) {
-            scoreEl.style.color = "#f59e0b"; // amber
+            scoreEl.style.color = "#f59e0b"; 
         } else {
-            scoreEl.style.color = "#ef4444"; // red
+            scoreEl.style.color = "#ef4444"; 
         }
 
-        // Verdict
         document.getElementById("verdict-value").innerText = result.verdict;
 
-        // Populate lists
         populateList("matched-skills", result.matched_skills);
         populateList("missing-skills", result.missing_skills);
         populateList("improvement-tips", result.improvement_tips);

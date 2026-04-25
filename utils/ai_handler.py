@@ -12,6 +12,9 @@ def analyze_resume(jd_text, resume_text):
     prompt = f"""
 You are an expert HR recruiter and resume analyst.
 
+If the resume is irrelevant, random, or lack meaningful content, respond only with:"Invalid Resume Format, kindly choose right pdf"
+otherwise analyze properly:
+
 Given the Job Description and Resume below, analyze the fit and return ONLY valid JSON with exactly this structure:
 {{
   "match_score": (integer between 0 and 100),

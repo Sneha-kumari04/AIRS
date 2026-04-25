@@ -3,65 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIRS - AI Resume Screener</title>
+    <title>AIRS — Automated Intelligence for Resume Screening</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #060a0f;
+            --surface: #0d1520;
+            --surface2: #111d2e;
+            --accent: #00e5a0;
+            --accent2: #0af;
+            --text: #e8f4f0;
+            --muted: #5a7a6e;
+            --border: rgba(0,229,160,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .cursor { width: 12px; height: 12px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.1s; mix-blend-mode: difference; }
+        .cursor-ring { width: 36px; height: 36px; border: 1.5px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transition: all 0.15s ease; opacity: 0.5; }
+
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(0,229,160,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,160,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gridMove { 0% { transform: translateY(0); } 100% { transform: translateY(60px); } }
+
+        .orb { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; opacity: 0.15; }
+        .orb1 { width: 500px; height: 500px; background: var(--accent); top: -100px; right: -100px; animation: orbFloat 8s ease-in-out infinite; }
+        .orb2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; left: -100px; animation: orbFloat 10s ease-in-out infinite reverse; }
+        @keyframes orbFloat { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,30px); } }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 20px 60px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            background: rgba(6,10,15,0.7);
+        }
+
+        .nav-logo { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 38px; height: 38px; background: var(--accent); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Space Mono', monospace; font-weight: 700; font-size: 14px; color: #000;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,229,160,0.4); } 50% { box-shadow: 0 0 0 10px rgba(0,229,160,0); } }
+        .logo-text { font-size: 20px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent); }
+        .nav-badge { font-family: 'Space Mono', monospace; font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px; color: var(--muted); }
+
+        .hero {
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 120px 60px 60px;
+            position: relative;
+        }
+
+        .hero-content { max-width: 900px; text-align: center; }
+
+        .hero-tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'Space Mono', monospace; font-size: 12px; color: var(--accent);
+            border: 1px solid var(--border); padding: 6px 16px; border-radius: 20px;
+            margin-bottom: 32px;
+            animation: fadeSlideDown 0.8s ease forwards; opacity: 0;
+        }
+        .hero-tag::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        .hero-title {
+            font-size: clamp(52px, 8vw, 96px); font-weight: 800;
+            line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 24px;
+            animation: fadeSlideDown 0.8s 0.2s ease forwards; opacity: 0;
+        }
+        .hero-title .accent { color: var(--accent); }
+        .hero-title .outline { -webkit-text-stroke: 2px var(--accent); color: transparent; }
+
+        .hero-sub {
+            font-size: 18px; color: var(--muted); max-width: 560px;
+            margin: 0 auto 48px; line-height: 1.6; font-weight: 400;
+            animation: fadeSlideDown 0.8s 0.4s ease forwards; opacity: 0;
+        }
+
+        .hero-cta {
+            display: inline-flex; align-items: center; gap: 12px;
+            background: var(--accent); color: #000;
+            font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+            padding: 16px 36px; border-radius: 12px; text-decoration: none;
+            transition: all 0.3s; cursor: none;
+            animation: fadeSlideDown 0.8s 0.6s ease forwards; opacity: 0;
+            position: relative; overflow: hidden;
+        }
+        .hero-cta::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.2); transform: translateX(-100%); transition: transform 0.4s; }
+        .hero-cta:hover::before { transform: translateX(0); }
+        .hero-cta:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(0,229,160,0.3); }
+        .cta-arrow { transition: transform 0.3s; }
+        .hero-cta:hover .cta-arrow { transform: translateX(4px); }
+
+        @keyframes fadeSlideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats {
+            display: flex; justify-content: center; gap: 60px;
+            margin-top: 80px; padding-top: 60px;
+            border-top: 1px solid var(--border);
+            animation: fadeSlideDown 0.8s 0.8s ease forwards; opacity: 0;
+        }
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 36px; font-weight: 800; color: var(--accent); font-family: 'Space Mono', monospace; }
+        .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+        .features { padding: 120px 60px; max-width: 1200px; margin: 0 auto; }
+        .section-label { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; }
+        .section-title { font-size: clamp(32px, 4vw, 52px); font-weight: 800; line-height: 1.1; margin-bottom: 60px; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+        .feature-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 36px;
+            transition: all 0.4s ease; position: relative; overflow: hidden;
+        }
+        .feature-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,229,160,0.05), transparent); opacity: 0; transition: opacity 0.4s; }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-card:hover { border-color: rgba(0,229,160,0.4); transform: translateY(-6px); box-shadow: 0 30px 60px rgba(0,0,0,0.3); }
+        .feature-icon { font-size: 36px; margin-bottom: 20px; }
+        .feature-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+        .feature-desc { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+        .how { padding: 120px 60px; background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .how-inner { max-width: 1200px; margin: 0 auto; }
+
+        .steps { display: flex; gap: 0; margin-top: 60px; position: relative; }
+        .steps::before { content: ''; position: absolute; top: 28px; left: 28px; right: 28px; height: 1px; background: var(--border); }
+        .step { flex: 1; text-align: center; padding: 0 24px; }
+        .step-num { width: 56px; height: 56px; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 16px; color: var(--accent); margin: 0 auto 24px; position: relative; z-index: 1; }
+        .step-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        footer {
+            padding: 40px 60px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+        }
+        .footer-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--accent); }
+        .footer-copy { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--accent); }
+    </style>
 </head>
 <body>
 
-<header>
-    <h1>AIRS</h1>
-    <p>Automated Intelligence for Resume Screening</p>
-</header>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
 
-<div class="container">
-
-    <div class="form-group">
-        <label>Upload Resume (PDF or TXT)</label>
-        <input type="file" id="resumeFile" accept=".pdf,.txt">
+<nav>
+    <div class="nav-logo">
+        <div class="logo-icon">AI</div>
+        <span class="logo-text">AIRS</span>
     </div>
+    <span class="nav-badge">v1.0 — Applied AI</span>
+</nav>
 
-    <div class="form-group">
-        <label>Job Description</label>
-        <textarea id="job" placeholder="Paste the job description here..."></textarea>
-    </div>
-
-    <button onclick="analyze()" id="analyzeBtn">Analyze Resume</button>
-
-    <div id="loader" style="display:none;">
-        <p>⏳ Analyzing resume... please wait</p>
-    </div>
-
-    <div id="result-box" style="display:none;">
-
-        <div class="score-section">
-            <h2 id="score-value">0%</h2>
-            <p id="verdict-value">-</p>
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-tag">Powered by Gemini AI</div>
+        <h1 class="hero-title">
+            Screen Smarter.<br>
+            Hire <span class="accent">Faster</span>.<br>
+            <span class="outline">Think</span> Better.
+        </h1>
+        <p class="hero-sub">AIRS analyzes resumes against job descriptions in seconds — giving you match scores, skill gaps, and actionable insights instantly.</p>
+        <a href="/analyzer" class="hero-cta">
+            Start Screening
+            <span class="cta-arrow">→</span>
+        </a>
+        <div class="stats">
+            <div class="stat-item"><div class="stat-num">98%</div><div class="stat-label">Accuracy Rate</div></div>
+            <div class="stat-item"><div class="stat-num">&lt;5s</div><div class="stat-label">Analysis Time</div></div>
+            <div class="stat-item"><div class="stat-num">3x</div><div class="stat-label">Faster Hiring</div></div>
         </div>
-
-        <div class="section">
-            <h3>✅ Matched Skills</h3>
-            <ul id="matched-skills"></ul>
-        </div>
-
-        <div class="section">
-            <h3>❌ Missing Skills</h3>
-            <ul id="missing-skills"></ul>
-        </div>
-
-        <div class="section">
-            <h3>💡 Improvement Tips</h3>
-            <ul id="improvement-tips"></ul>
-        </div>
-
     </div>
+</section>
 
-    <div id="error-box" style="display:none;">
-        <p id="error-msg"></p>
+<section class="features">
+    <p class="section-label">// What AIRS does</p>
+    <h2 class="section-title">Intelligence at<br>every step.</h2>
+    <div class="features-grid">
+        <div class="feature-card"><div class="feature-icon">🎯</div><h3 class="feature-title">Match Score</h3><p class="feature-desc">Get an instant 0–100% compatibility score between any resume and job description. Color-coded for quick decisions.</p></div>
+        <div class="feature-card"><div class="feature-icon">🧠</div><h3 class="feature-title">Skill Gap Analysis</h3><p class="feature-desc">See exactly which skills match and which are missing — so you know what to look for or what to learn.</p></div>
+        <div class="feature-card"><div class="feature-icon">💡</div><h3 class="feature-title">Improvement Tips</h3><p class="feature-desc">AI-powered suggestions to strengthen the resume for the specific role — actionable, not generic advice.</p></div>
+        <div class="feature-card"><div class="feature-icon">⚡</div><h3 class="feature-title">Instant Analysis</h3><p class="feature-desc">Results in under 5 seconds. Upload a PDF, paste the JD, and get structured insights immediately.</p></div>
+        <div class="feature-card"><div class="feature-icon">🔒</div><h3 class="feature-title">Secure & Private</h3><p class="feature-desc">Your resume data is never stored. Every analysis is processed in real-time and discarded immediately after.</p></div>
+        <div class="feature-card"><div class="feature-icon">📄</div><h3 class="feature-title">PDF Support</h3><p class="feature-desc">Upload any text-based PDF resume directly. No copy-pasting required — AIRS extracts and analyzes automatically.</p></div>
     </div>
+</section>
 
-</div>
+<section class="how">
+    <div class="how-inner">
+        <p class="section-label">// How it works</p>
+        <h2 class="section-title">Three steps.<br>Zero complexity.</h2>
+        <div class="steps">
+            <div class="step"><div class="step-num">01</div><h3 class="step-title">Upload Resume</h3><p class="step-desc">Upload any PDF or TXT resume file. AIRS extracts all text automatically.</p></div>
+            <div class="step"><div class="step-num">02</div><h3 class="step-title">Paste Job Description</h3><p class="step-desc">Copy the job description from any job board and paste it in.</p></div>
+            <div class="step"><div class="step-num">03</div><h3 class="step-title">Get Instant Results</h3><p class="step-desc">Gemini AI analyzes the fit and returns a full report in seconds.</p></div>
+        </div>
+    </div>
+</section>
 
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+<footer>
+    <div class="footer-logo">
+        <div class="logo-icon" style="width:28px;height:28px;font-size:11px;">AI</div>
+        AIRS
+    </div>
+    <div class="footer-copy">© 2026 AIRS — Automated Intelligence for Resume Screening.<br>Powered by Gemini AI.<br> Built by Sneha.</div>
+    <div class="footer-links">
+        <a href="/analyzer">Launch App</a>
+        <a href="https://github.com/Sneha-kumari04/AIRS.git" target="_blank">GitHub</a>
+    </div>
+</footer>
+
+<script>
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+    document.addEventListener('mousemove', e => {
+        mouseX = e.clientX; mouseY = e.clientY;
+        cursor.style.left = mouseX - 6 + 'px';
+        cursor.style.top = mouseY - 6 + 'px';
+    });
+    function animateRing() {
+        ringX += (mouseX - ringX - 18) * 0.12;
+        ringY += (mouseY - ringY - 18) * 0.12;
+        ring.style.left = ringX + 'px'; ring.style.top = ringY + 'px';
+        requestAnimationFrame(animateRing);
+    }
+    animateRing();
+    document.querySelectorAll('a, button').forEach(el => {
+        el.addEventListener('mouseenter', () => { cursor.style.transform = 'scale(2)'; ring.style.transform = 'scale(1.5)'; });
+        el.addEventListener('mouseleave', () => { cursor.style.transform = 'scale(1)'; ring.style.transform = 'scale(1)'; });
+    });
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => { if (entry.isIntersecting) { entry.target.style.opacity = '1'; entry.target.style.transform = 'translateY(0)'; } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.feature-card, .step').forEach(el => {
+        el.style.opacity = '0'; el.style.transform = 'translateY(30px)'; el.style.transition = 'all 0.6s ease';
+        observer.observe(el);
+    });
+</script>
 </body>
 </html>

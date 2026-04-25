@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIRS — Analyzer</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #060a0f;
+            --surface: #0d1520;
+            --surface2: #111d2e;
+            --accent: #00e5a0;
+            --accent2: #0af;
+            --text: #e8f4f0;
+            --muted: #5a7a6e;
+            --border: rgba(0,229,160,0.15);
+            --red: #ff4d6d;
+            --amber: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            min-height: 100vh;
+            cursor: none;
+        }
+
+        .cursor { width: 12px; height: 12px; background: var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999; transition: transform 0.1s; mix-blend-mode: difference; }
+        .cursor-ring { width: 36px; height: 36px; border: 1.5px solid var(--accent); border-radius: 50%; position: fixed; pointer-events: none; z-index: 9998; transition: all 0.15s ease; opacity: 0.5; }
+
+        .grid-bg {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes gridMove { 0% { transform: translateY(0); } 100% { transform: translateY(60px); } }
+
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            padding: 16px 40px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            background: rgba(6,10,15,0.8);
+        }
+
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-icon {
+            width: 34px; height: 34px; background: var(--accent); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Space Mono', monospace; font-weight: 700; font-size: 12px; color: #000;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(0,229,160,0.4); } 50% { box-shadow: 0 0 0 8px rgba(0,229,160,0); } }
+        .logo-text { font-size: 18px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent); }
+
+        .nav-back {
+            font-family: 'Space Mono', monospace; font-size: 12px;
+            color: var(--muted); text-decoration: none;
+            border: 1px solid var(--border); padding: 6px 14px; border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-back:hover { color: var(--accent); border-color: var(--accent); }
+
+        .main {
+            max-width: 1100px; margin: 0 auto;
+            padding: 40px 40px 80px;
+        }
+
+        .page-title {
+            font-size: 14px; font-family: 'Space Mono', monospace;
+            color: var(--accent); margin-bottom: 8px; letter-spacing: 0.1em;
+        }
+
+        .page-heading {
+            font-size: 36px; font-weight: 800; margin-bottom: 40px;
+        }
+
+        .input-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            margin-bottom: 24px;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-family: 'Space Mono', monospace;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            width: 100%; padding: 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            cursor: pointer;
+            font-family: 'Syne', sans-serif;
+            transition: border-color 0.2s;
+        }
+        input[type="file"]:hover { border-color: var(--accent); }
+
+        textarea {
+            width: 100%; height: 160px; padding: 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Syne', sans-serif;
+            font-size: 14px; resize: none;
+            transition: border-color 0.2s;
+            line-height: 1.6;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); }
+        textarea::placeholder { color: var(--muted); }
+
+        .analyze-btn {
+            width: 100%; padding: 18px;
+            background: var(--accent);
+            border: none; border-radius: 12px;
+            color: #000; font-family: 'Syne', sans-serif;
+            font-weight: 700; font-size: 16px;
+            cursor: none; transition: all 0.3s;
+            position: relative; overflow: hidden;
+            letter-spacing: 0.05em;
+        }
+        .analyze-btn::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.2); transform: translateX(-100%); transition: transform 0.4s; }
+        .analyze-btn:hover::before { transform: translateX(0); }
+        .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,229,160,0.3); }
+        .analyze-btn:disabled { background: var(--surface2); color: var(--muted); transform: none; box-shadow: none; }
+
+        #loader {
+            display: none; text-align: center; padding: 40px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; margin-bottom: 24px;
+        }
+        .loader-ring {
+            width: 48px; height: 48px;
+            border: 3px solid var(--border); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--muted); }
+
+        #result-box { display: none; }
+
+        .score-panel {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 40px; text-align: center;
+            margin-bottom: 24px; position: relative; overflow: hidden;
+        }
+        .score-panel::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(0,229,160,0.08), transparent 60%); }
+
+        .score-label {
+            font-family: 'Space Mono', monospace; font-size: 12px; color: var(--muted);
+            letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 12px;
+        }
+        #score-value {
+            font-size: 80px; font-weight: 800;
+            font-family: 'Space Mono', monospace;
+            line-height: 1; margin-bottom: 12px;
+            transition: all 0.5s ease;
+        }
+        #verdict-value { font-size: 18px; font-weight: 600; color: var(--muted); }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .result-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px;
+            animation: fadeUp 0.5s ease forwards; opacity: 0;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-card-title {
+            font-size: 13px; font-family: 'Space Mono', monospace;
+            color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase;
+            margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+        }
+
+        .result-card ul { list-style: none; }
+        .result-card ul li {
+            font-size: 13px; color: var(--text);
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+            line-height: 1.5; display: flex; align-items: flex-start; gap: 8px;
+        }
+        .result-card ul li:last-child { border-bottom: none; }
+        .result-card ul li::before { content: '▸'; color: var(--accent); font-size: 10px; margin-top: 3px; flex-shrink: 0; }
+
+        #error-box {
+            display: none; padding: 16px 20px;
+            background: rgba(255,77,109,0.1);
+            border: 1px solid rgba(255,77,109,0.3);
+            border-radius: 12px; color: #ff4d6d;
+            font-size: 14px; margin-top: 16px;
+        }
+
+        footer {
+            border-top: 1px solid var(--border); padding: 24px 40px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+        }
+        .footer-copy { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="grid-bg"></div>
+
+<nav>
+    <a href="/" class="nav-logo">
+        <div class="logo-icon">AI</div>
+        <span class="logo-text">AIRS</span>
+    </a>
+    <a href="/" class="nav-back">← Back to Home</a>
+</nav>
+
+<div class="main">
+    <p class="page-title">// Resume Analyzer</p>
+    <h1 class="page-heading">Analyze your fit.</h1>
+
+    <div class="input-panel">
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Upload Resume (PDF or TXT)</label>
+                <input type="file" id="resumeFile" accept=".pdf,.txt">
+            </div>
+            <div class="input-group">
+                <label>Job Description</label>
+                <textarea id="job" placeholder="Paste the full job description here..."></textarea>
+            </div>
+        </div>
+        <button class="analyze-btn" onclick="analyze()" id="analyzeBtn">⚡ Analyze Resume</button>
+        <div id="error-box"></div>
+    </div>
+
+    <div id="loader">
+        <div class="loader-ring"></div>
+        <p class="loader-text">Gemini AI is analyzing your resume...</p>
+    </div>
+
+    <div id="result-box">
+        <div class="score-panel">
+            <p class="score-label">Match Score</p>
+            <div id="score-value">—</div>
+            <div id="verdict-value">—</div>
+        </div>
+        <div class="results-grid">
+            <div class="result-card" style="animation-delay:0.1s">
+                <div class="result-card-title">✅ Matched Skills</div>
+                <ul id="matched-skills"></ul>
+            </div>
+            <div class="result-card" style="animation-delay:0.2s">
+                <div class="result-card-title">❌ Missing Skills</div>
+                <ul id="missing-skills"></ul>
+            </div>
+            <div class="result-card" style="animation-delay:0.3s">
+                <div class="result-card-title">💡 Improvement Tips</div>
+                <ul id="improvement-tips"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="footer-copy">© 2026 AIRS — Automated Intelligence for Resume Screening. <br> Powered by Gemini AI.<br> Built by Sneha.</div>
+    <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="https://github.com/Sneha-kumari04/AIRS.git" target="_blank">GitHub</a>
+    </div>
+</footer>
+
+<script>
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+    document.addEventListener('mousemove', e => {
+        mouseX = e.clientX; mouseY = e.clientY;
+        cursor.style.left = mouseX - 6 + 'px';
+        cursor.style.top = mouseY - 6 + 'px';
+    });
+    function animateRing() {
+        ringX += (mouseX - ringX - 18) * 0.12;
+        ringY += (mouseY - ringY - 18) * 0.12;
+        ring.style.left = ringX + 'px'; ring.style.top = ringY + 'px';
+        requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    async function analyze() {
+        const file = document.getElementById("resumeFile").files[0];
+        const job = document.getElementById("job").value.trim();
+        const btn = document.getElementById("analyzeBtn");
+        const loader = document.getElementById("loader");
+        const resultBox = document.getElementById("result-box");
+        const errorBox = document.getElementById("error-box");
+
+        if (!file || !job) {
+            errorBox.style.display = "block";
+            errorBox.innerText = "⚠️ Please upload a resume and enter a job description.";
+            return;
+        }
+
+        btn.disabled = true; btn.innerText = "⏳ Analyzing...";
+        loader.style.display = "block";
+        resultBox.style.display = "none";
+        errorBox.style.display = "none";
+
+        try {
+            const formData = new FormData();
+            formData.append("resume", file);
+            formData.append("job", job);
+
+            const response = await fetch("/analyze", { method: "POST", body: formData });
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            const result = data.result;
+            const score = result.match_score;
+            const scoreEl = document.getElementById("score-value");
+            scoreEl.innerText = score + "%";
+            scoreEl.style.color = score >= 70 ? "var(--accent)" : score >= 40 ? "var(--amber)" : "var(--red)";
+            document.getElementById("verdict-value").innerText = result.verdict;
+
+            populateList("matched-skills", result.matched_skills);
+            populateList("missing-skills", result.missing_skills);
+            populateList("improvement-tips", result.improvement_tips);
+
+            resultBox.style.display = "block";
+
+        } catch (error) {
+            errorBox.style.display = "block";
+            errorBox.innerText = "⚠️ " + (error.message || "Something went wrong.");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "⚡ Analyze Resume";
+            loader.style.display = "none";
+        }
+    }
+
+    function populateList(id, items) {
+        const ul = document.getElementById(id);
+        ul.innerHTML = "";
+        if (!items || items.length === 0) { ul.innerHTML = "<li>None found</li>"; return; }
+        items.forEach(item => { const li = document.createElement("li"); li.innerText = item; ul.appendChild(li); });
+    }
+</script>
+</body>
+</html>

@@ -19,10 +19,13 @@ def home():
     return render_template("index.html")
 
 
+@app.route("/analyzer")
+def analyzer():
+    return render_template("analyzer.html")
+
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
-
-    # Check file exists
     file = request.files.get("resume")
     jd_text = request.form.get("job", "").strip()
 
@@ -32,18 +35,15 @@ def analyze():
     if not jd_text:
         return jsonify({"error": "Please enter a job description."}), 400
 
-    # Check file type
     if not allowed_file(file.filename):
         return jsonify({"error": "Only PDF or TXT files are allowed."}), 400
 
-    # Check file size
     file.seek(0, os.SEEK_END)
     file_size_mb = file.tell() / (1024 * 1024)
     file.seek(0)
     if file_size_mb > MAX_FILE_SIZE_MB:
         return jsonify({"error": f"File too large. Max size is {MAX_FILE_SIZE_MB}MB."}), 400
 
-    # Extract resume text
     try:
         _, ext = os.path.splitext(file.filename)
         if ext.lower() == ".pdf":
@@ -62,7 +62,6 @@ def analyze():
     except Exception as e:
         return jsonify({"error": f"File read error: {str(e)}"}), 500
 
-    # AI Analysis
     try:
         result = analyze_resume(jd_text, resume_text)
         return jsonify({"result": result})
