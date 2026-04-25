@@ -32,7 +32,7 @@ Return ONLY valid JSON. No explanation. No markdown. No backticks.
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=prompt
         )
         raw = response.text.strip()
