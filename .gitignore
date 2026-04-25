@@ -1,5 +1,7 @@
+.history/
 # Environment variables
 .env
+*.env
 
 # Uploaded files
 uploads/
@@ -12,7 +14,6 @@ __pycache__/
 
 # Virtual environment
 venv/
-env/
 .venv/
 
 # VS Code settings
