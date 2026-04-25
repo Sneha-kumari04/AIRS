@@ -1,6 +1,5 @@
 flask
-google-generativeai
-python-dotenv
 gunicorn
+python-dotenv
 PyPDF2
 google-generativeai
