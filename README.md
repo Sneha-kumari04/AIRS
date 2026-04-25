@@ -1,9 +1,8 @@
 # AIRS — AI Resume Screening System
 
-AIRS (Automated Intelligence for Resume Screening) is an AI-powered web application that analyzes resumes against job descriptions and provides instant insights such as match score, skill gaps, and improvement suggestions.
-Built using Flask and powered by Google Gemini AI, AIRS helps streamline the hiring process with fast, intelligent, and actionable analysis.
 ---
 
+AIRS (Automated Intelligence for Resume Screening) is an AI-powered web application that analyzes resumes against job descriptions and provides instant insights such as match score, skill gaps, and improvement suggestions.
 ##  Features
 
 1. User uploads a resume
@@ -49,12 +48,6 @@ AIRS/
 
 ---
 
-##  Demo
-
-👉 
-
----
-
 ##  Live 🔗
 
 👉 https://airs-1.onrender.com
@@ -77,11 +70,10 @@ AIRS/
 
 ---
 
-## 👩‍💻 Author
+##  Author
 
 **Sneha Kumari**
 Built as part of an AI project / hackathon submission.
-
 ---
 
 ##  License
