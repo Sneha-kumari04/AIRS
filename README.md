@@ -1,4 +1,4 @@
-# AIRS — AI Resume Screening System
+# AIRS — Automated Intelligence for Resume Screening
 
 ---
 
