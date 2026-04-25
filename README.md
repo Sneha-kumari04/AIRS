@@ -3,6 +3,15 @@
 ---
 
 AIRS (Automated Intelligence for Resume Screening) is an AI-powered web application that analyzes resumes against job descriptions and provides instant insights such as match score, skill gaps, and improvement suggestions.
+
+---
+
+##  Live 🔗
+
+👉 https://airs-1.onrender.com
+
+---
+
 ##  Features
 
 1. User uploads a resume
@@ -26,8 +35,7 @@ AIRS (Automated Intelligence for Resume Screening) is an AI-powered web applicat
 * **Deployment:** Render
 * **PDF Parsing:** PyPDF2
 
-
-
+---
 ##  Project Structure
 
 ```
@@ -45,13 +53,6 @@ AIRS/
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-##  Live 🔗
-
-👉 https://airs-1.onrender.com
-
 ---
 
 ##  Use Cases
@@ -73,8 +74,10 @@ AIRS/
 ##  Author
 
 **Sneha Kumari**
-Built as part of an AI project / hackathon submission.
+
 ---
+
+Built as part of an AI project / hackathon submission.
 
 ##  License
 
